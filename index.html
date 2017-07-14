@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Dependent Questions Sample</title>
+  <script src="jquery-1.9.1.min.js"></script>
+
+</head>
+
+<body>
+
+
+<form action="?" id="myform">
+	<div id="loadQuestions"></div>
+</form>
+
+
+
+
+
+
+<!--
+
+<form action="?" id="myform">
+	<div id="loadQuestions"><div id="1"><div>Is your PC Windows 7, 8, or 8.1</div><span><input name="1" value="Yes" id="1-Yes" type="radio"><label for="1-Yes">Yes</label></span><span><input name="1" value="No" id="1-No" type="radio"><label for="1-No">No</label></span><div data-depends-on="1=Yes"><div id="3"><div>Was your Windows genuine copy?</div><span><input name="3" value="Yes" id="3-Yes" type="radio"><label for="3-Yes">Yes</label></span><span><input name="3" value="No" id="3-No" type="radio"><label for="3-No">No</label></span></div></div><div data-depends-on="1=No"><div id="2"><div>Does your PC have Windows 10 installed</div><span><input name="2" value="Yes" id="2-Yes" type="radio"><label for="2-Yes">Yes</label></span><span><input name="2" value="No Vista" id="2-No Vista" type="radio"><label for="2-No Vista">No Vista</label></span><span><input name="2" value="No XP" id="2-No XP" type="radio"><label for="2-No XP">No XP</label></span><div data-depends-on="2=Yes"><div id="4"><div>Was your PC installed from Windows 7, 8, 8.1?</div><span><input name="4" value="Yes" id="4-Yes" type="radio"><label for="4-Yes">Yes</label></span><span><input name="4" value="No" id="4-No" type="radio"><label for="4-No">No</label></span></div></div></div></div></div></div>
+</form>
+
+
+
+-->
+
+
+
+<script>
+
+
+// get data from json ajax
+function loadDependentQuestionsForm() {
+			
+			
+	var xmlhttp = new XMLHttpRequest();
+	xmlhttp.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200) {
+			
+			var myObj = JSON.parse(this.responseText);
+			
+			// render questions as normal
+			var txt = '';
+			var previous = 0;
+			var first = true;
+			for (x in myObj) {
+				if(previous != myObj[x].questionID)
+				{
+					if(!first)
+					{
+						txt += '</div>';
+					}
+					txt += '<div id="'+myObj[x].questionID+'">';
+					txt += '<div>' + myObj[x].text + '</div>';
+					txt += '<span><input type="radio" name="'+myObj[x].questionID+'" value="'+myObj[x].ResponseOptionValue+'" id="'+myObj[x].questionID+'-'+myObj[x].ResponseOptionValue+'" /><label for="'+myObj[x].questionID+'-'+myObj[x].ResponseOptionValue+'">'+myObj[x].ResponseOptionValue+'</label></span>'; 
+					first = false;
+				}
+				else
+				{
+					txt += '<span><input type="radio" name="'+myObj[x].questionID+'" value="'+myObj[x].ResponseOptionValue+'" id="'+myObj[x].questionID+'-'+myObj[x].ResponseOptionValue+'" /><label for="'+myObj[x].questionID+'-'+myObj[x].ResponseOptionValue+'">'+myObj[x].ResponseOptionValue+'</label></span>'; 
+				}
+
+				
+				previous = myObj[x].questionID;
+			}
+			
+
+
+			// flush the interface 
+			document.getElementById('loadQuestions').innerHTML = txt;
+					
+			
+			
+			// build dependent questions
+			var previous = 0;
+			for (x in myObj) {
+				if(myObj[x].SubsequentQuestionID > 0)
+				{
+					if(previous != myObj[x].questionID)
+					{
+						// new questionID
+														
+						//console.log(myObj[x].questionID, myObj[x].SubsequentQuestionID);
+						var domElem = document.getElementById(myObj[x].SubsequentQuestionID);
+						var parentElem = document.getElementById(myObj[x].questionID);
+						//console.log(domElem);
+						//console.log(parentElem);
+						
+						
+						var div = document.createElement('DIV');
+						div.setAttribute('data-depends-on',myObj[x].questionID+'='+myObj[x].ResponseOptionValue);
+						div.appendChild(domElem);
+						
+						//domElem.remove();
+						parentElem.appendChild(div);
+						
+																								
+					}
+					else
+					{
+						// same questionID, different response option
+						//console.log(myObj[x].questionID, myObj[x].SubsequentQuestionID);
+						var domElem = document.getElementById(myObj[x].SubsequentQuestionID);
+						
+						
+						//console.log(div);
+						
+						var parentElem = document.getElementById(myObj[x].questionID);
+						//console.log(domElem);
+						//console.log(parentElem);
+						
+						
+						var div = document.createElement('DIV');
+						div.setAttribute('data-depends-on',myObj[x].questionID+'='+myObj[x].ResponseOptionValue);
+						div.appendChild(domElem);
+						parentElem.appendChild(div);
+
+						
+					}
+					previous = myObj[x].questionID;
+				}
+			
+			
+			}
+			
+			
+			// load jquery-dependent-questions after dynamic dom is ready
+			$("#loadQuestions").promise().done(function() {
+
+				var js = document.createElement("script");
+				js.type = "text/javascript";
+				js.src = "jquery.dependent-questions.js";	//define form id "myform" in the end inside this js
+				document.body.appendChild(js);
+
+
+			});
+			
+			
+		}
+	};
+	xmlhttp.open('GET', 'getDependentQuestionJSON.php', true);
+	xmlhttp.send();
+
+
+}
+
+
+
+loadDependentQuestionsForm();
+
+
+  
+  
+
+
+	
+	
+</script>
+
+
+
+
+
+</body>
+</html>
